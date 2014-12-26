@@ -1,0 +1,26 @@
+{
+    "name": "dlds/yii2-rels",
+    "description": "Yii2 many many relations handler",
+    "keywords": ["yii2", "relations", "many-many"],
+    "type": "yii2-extension",
+    "license": "BSD-3-Clause",
+    "support": {
+        "issues": "https://github.com/dlds/yii2-rels/issues",
+        "wiki": "https://github.com/dlds/yii2-rels/wiki",
+        "source": "https://github.com/dlds/yii2-rels"
+    },
+    "authors": [
+        {
+            "name": "Jiri Svoboda",
+            "email": "jiri.svoboda@dlds.cz"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "dlds\\rels\\": ""
+        }
+    }
+}
