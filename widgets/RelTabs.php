@@ -8,20 +8,12 @@
 
 namespace dlds\rels\widgets;
 
+use yii\jui\Tabs;
+
 /**
  * Widget handles many many input widgets
  */
-class RelTabs extends \yii\base\Widget {
-
-    /**
-     * @var CActiveRecord current model which use GMultilangBehavior
-     */
-    public $model;
-
-    /**
-     * @var string view file path
-     */
-    public $view;
+class RelTabs extends \yii\widgets\InputWidget {
 
     /**
      * @var mixed attribute name to be used as header title or FALSE to use relation index
@@ -29,9 +21,14 @@ class RelTabs extends \yii\base\Widget {
     public $header = false;
 
     /**
-     * @var boolean indicates if sluggable assets should be assigned
+     * @var string current form
      */
-    public $sluggable = true;
+    public $form;
+
+    /**
+     * @var string tab view file path
+     */
+    public $tabView;
 
     /**
      * @var array relations to be interpreted
@@ -48,16 +45,6 @@ class RelTabs extends \yii\base\Widget {
      */
     public function init()
     {
-        if (!($this->owner instanceof CActiveForm))
-        {
-            throw new Exception(Yii::t('app', '"{this}.owner" must be instance of "{instance}."', array(
-                '{this}' => get_class($this),
-                '{instance}' => 'CActiveForm',
-            )));
-        }
-
-        $this->_registerJsFiles();
-
         $this->_initRelations();
 
         $this->_initTabs();
@@ -70,11 +57,9 @@ class RelTabs extends \yii\base\Widget {
      */
     public function run()
     {
-        $html = $this->owner->errorSummary($this->_relations);
+        //$html = $this->owner->errorSummary($this->_relations);
 
-        $html .= $this->renderTabs();
-
-        echo $html;
+        $this->renderTabs();
     }
 
     /**
@@ -92,9 +77,10 @@ class RelTabs extends \yii\base\Widget {
     {
         foreach ($this->_relations as $id => $relation)
         {
-            $this->_tabs[$this->_parseHeader($relation, $id)] = array(
-                'content' => $this->controller->renderPartial($this->view, array(
-                    'form' => $this->owner,
+            $this->_tabs[] = array(
+                'label' => $this->_parseHeader($relation, $id),
+                'content' => $this->render($this->tabView, array(
+                    'form' => $this->form,
                     'model' => $relation,
                     'id' => $id,
                         ), true),
@@ -108,78 +94,46 @@ class RelTabs extends \yii\base\Widget {
      */
     private function renderTabs()
     {
-        // fix path to to MJuiTabs
-        return $this->widget(Yii::app()->metronic->getExtPath('widgets.jui.MJuiTabs'), array(
-                    'tabs' => $this->_tabs,
-                    'options' => array(
-                        'collapsible' => true,
-                    ),
-                        ), true);
+        echo Tabs::widget(array(
+            'items' => $this->_tabs,
+            'options' => array(
+                'collapsible' => true,
+            ),
+        ));
     }
 
     /**
      * Parses and retrieves header based on given template
-     * @param CActiveRecord $header given model
+     * @param CActiveRecord $relation given model
      * @param string $default default value to be retrieves
      * @return string header
      */
-    private function _parseHeader($header, $default = false)
+    private function _parseHeader($relation, $default = false)
     {
-        $attributes = explode('.', $this->header);
-
-        foreach ($attributes as $attribute)
+        if (false !== $this->header)
         {
-            if (isset($header->{$attribute}))
+            $attributes = explode('.', $this->header);
+
+            foreach ($attributes as $attribute)
             {
-                $header = $header->{$attribute};
+                if (isset($relation->{$attribute}))
+                {
+                    $relation = $relation->{$attribute};
+                }
             }
         }
 
-        if (!is_string($header))
+        if (!is_string($relation))
         {
             if ($default !== false)
             {
                 return $default;
             }
 
-            throw new Exception('Header cannot be parsed.');
+            return $relation->primaryKey;
         }
 
-        return $header;
-    }
-
-    /**
-     * Registeres required JS files
-     */
-    private function _registerJsFiles()
-    {
-        if ($this->sluggable)
-        {
-            AssetsHandler::instance(false)->registerJsFiles(array(
-                Yii::app()->getAssetManager()->publish(dirname(__FILE__) . '/assets/js/jquery.slugit.js'),
-                    ), CClientScript::POS_END);
-
-            AssetsHandler::instance()->registerJs('mi.components.MActiveForm.' . $this->id, "
-                var sluggables = $('.sluggable');
-
-                $.each(sluggables, function(i, e) {
-                    
-                    var targetName = $(e).data('target');
-                    
-                    if(targetName.indexOf('#') == -1) {
-                         targetName = '#' + targetName;
-                    }
-                    var target = $(targetName);
-
-                    $(e).slugIt({
-                        events:    'keyup',
-                        output:    target,
-                        separator: '-',
-                    });
-
-                });
-            ", CClientScript::POS_READY);
-        }
+        return $relation;
     }
 
 }
