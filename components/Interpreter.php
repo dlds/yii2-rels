@@ -21,6 +21,7 @@ class Interpreter {
     const INDEX_VIA_CLASS = 0;
     const INDEX_REL_PRIMARY = 1;
     const INDEX_REL_SECONDARY = 2;
+    const INDEX_VIA_CURRENT = 3;
 
     /**
      * @var \yii\base\Model owner model
@@ -31,6 +32,11 @@ class Interpreter {
      * @var \yii\db\ActiveRecord via class name
      */
     public $viaModel;
+
+    /**
+     * @var string current via relation name
+     */
+    public $viaCurrent;
 
     /**
      * @var string primary relation name
@@ -107,12 +113,12 @@ class Interpreter {
      */
     public function getCurrentInterpretation()
     {
-        if (!$this->_currentHasManyRelation)
+        if (!$this->viaCurrent)
         {
             return null;
         }
 
-        return $this->owner->{$this->_currentHasManyRelation};
+        return $this->owner->{$this->viaCurrent};
     }
 
     /**
@@ -187,13 +193,13 @@ class Interpreter {
         foreach ($this->getAllInterpretations() as $model)
         {
             $model->{$this->relPrimaryKey} = 0;
-            
+
             if (!$model->validate())
             {
                 $valid = false;
             }
         }
-        
+
         return $valid;
     }
 
@@ -208,7 +214,7 @@ class Interpreter {
         foreach ($this->getAllInterpretations() as $model)
         {
             $model->{$this->relPrimaryKey} = $this->owner->primaryKey;
-            
+
             if (!$model->save())
             {
                 $valid = false;
@@ -265,12 +271,14 @@ class Interpreter {
      */
     private function _loadInterpreterConfig($config)
     {
-        if (count($config) < 3)
+        if (count($config) < 4)
         {
             throw new Exception(Yii::t('ib', 'Invalid config for interpreter. Missing required keys.'));
         }
 
         $this->viaModel = new $config[self::INDEX_VIA_CLASS];
+
+        $this->viaCurrent = $config[self::INDEX_VIA_CURRENT];
 
         $this->relPrimary = $this->viaModel->getRelation($config[self::INDEX_REL_PRIMARY]);
 

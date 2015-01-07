@@ -8,8 +8,6 @@
 
 namespace dlds\rels\widgets;
 
-use yii\jui\Tabs;
-
 /**
  * Widget handles many many input widgets
  */
@@ -29,6 +27,11 @@ class RelTabs extends \yii\widgets\InputWidget {
      * @var string tab view file path
      */
     public $tabView;
+
+    /**
+     * @var string widget calss
+     */
+    public $tabsClass = '\yii\jui\Tabs';
 
     /**
      * @var array relations to be interpreted
@@ -94,7 +97,9 @@ class RelTabs extends \yii\widgets\InputWidget {
      */
     private function renderTabs()
     {
-        echo Tabs::widget(array(
+        $widget = $this->tabsClass;
+        
+        echo $widget::widget(array(
             'items' => $this->_tabs,
             'options' => array(
                 'collapsible' => true,

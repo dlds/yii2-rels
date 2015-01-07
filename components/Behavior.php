@@ -35,9 +35,43 @@ class Behavior extends \yii\base\Behavior {
     public $config;
 
     /**
+     * @var array attr to be auto-interpreted
+     */
+    public $attrs;
+
+    /**
      * @var boolean indicates interpretation validity
      */
     private $valid;
+
+    /**
+     * Returns the value of an object property.
+     * @param stirng $name the property name
+     */
+    public function __get($name)
+    {
+        if (!in_array($name, $this->attrs))
+        {
+            return parent::__get($name);
+        }
+        
+        return $this->getInterpretation($name);
+    }
+
+    /**
+     * Indicates whether a property can be read.
+     * @param string $name the property name
+     * @param boolean $checkVars whether to treat member variables as properties
+     */
+    public function canGetProperty($name, $checkVars = true)
+    {
+        if (!in_array($name, $this->attrs))
+        {
+            return parent::canGetProperty($name, $checkVars);
+        }
+
+        return true;
+    }
 
     /**
      * Validates interpreter together with owner
@@ -57,7 +91,7 @@ class Behavior extends \yii\base\Behavior {
      * Handles validation interpretetaions given in post
      * @param \yii\base\Event $event
      */
-    public function handleValidate($event)
+    public function handleValidate()
     {
         $this->valid = $this->setAvailableInterpretations(\Yii::$app->request->post())->validate();
     }
@@ -75,7 +109,7 @@ class Behavior extends \yii\base\Behavior {
      * Handles saving of interpretation
      * @param type $event
      */
-    public function handleAfterSave($event)
+    public function handleAfterSave()
     {
         $this->interpreter()->save();
     }
