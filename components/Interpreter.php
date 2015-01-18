@@ -8,6 +8,9 @@
 
 namespace dlds\rels\components;
 
+use yii\helpers\ArrayHelper;
+use yii\helpers\StringHelper;
+
 /**
  * Interpreter handles many many interpretations
  * 
@@ -64,6 +67,11 @@ class Interpreter {
     private $_allInterpretations;
 
     /**
+     * @var array relations to save
+     */
+    private $_relationsToSave = [];
+
+    /**
      * Construcor
      * @param \yii\db\ActiveRecord $owner owner model
      * @param array $config given configs
@@ -86,21 +94,19 @@ class Interpreter {
     {
         if ($index)
         {
-            $availables = $this->getAvailableInterpretations();
+            $availables = $this->getInterpretations();
 
             if (isset($availables[$index]))
             {
                 return $availables[$index]->{$attribute};
             }
         }
-        else
-        {
-            $current = $this->getCurrentInterpretation();
 
-            if ($current)
-            {
-                return $current->{$attribute};
-            }
+        $current = $this->getCurrentInterpretation();
+
+        if ($current)
+        {
+            return $current->{$attribute};
         }
 
         return null;
@@ -122,16 +128,43 @@ class Interpreter {
     }
 
     /**
-     * Default method for getting owner's available hasMany relation models.
-     * This can be overloaded and changed in owner's model class.
-     * @returns mixed available hasMany relation models
+     * Retrieves interpretations based on gived data
+     * @param array $data
      */
-    public function getAvailableInterpretations()
+    public function getInterpretations($data = [])
     {
+        $condition = [$this->relPrimaryKey => $this->owner->primaryKey];
+
+        if ($data)
+        {
+            $secondaryKeys = ArrayHelper::getColumn($data, $this->relSecondaryKey);
+
+            ArrayHelper::merge($condition, [$this->relSecondaryKey => $secondaryKeys]);
+        }
+
         return $this->viaModel->find()
-                        ->where([$this->relPrimaryKey => $this->owner->primaryKey])
+                        ->where($condition)
                         ->indexBy($this->relSecondaryKey)
                         ->all();
+    }
+
+    /**
+     * Sets specific model relations attributes
+     * @param array $data relations data to be set
+     */
+    public function setInterpretations($data)
+    {
+        /** @var \yii\db\ActiveRecord $model */
+        $secondaryKeys = ArrayHelper::getColumn(ArrayHelper::getValue($data, $this->viaModel->formName(), []), $this->relSecondaryKey);
+
+        if (!empty($secondaryKeys))
+        {
+            $this->_relationsToSave = $this->pushMissingInterpretations($this->getInterpretations($secondaryKeys), $secondaryKeys);
+
+            $this->viaModel->loadMultiple($this->_relationsToSave, $data);
+        }
+
+        return $this;
     }
 
     /**
@@ -142,42 +175,23 @@ class Interpreter {
     {
         if (!$this->_allInterpretations)
         {
-            $this->_allInterpretations = $this->pushMissingInterpretations($this->getAvailableInterpretations());
+            $this->_allInterpretations = $this->pushMissingInterpretations($this->getInterpretations());
         }
 
         return $this->_allInterpretations;
     }
 
     /**
-     * Default method for getting all owner's possible hasMany relation models.
-     * This can be overloaded and changed in owner's model class.
-     */
-    protected function pushMissingInterpretations($availables)
-    {
-        $model = new $this->relSecondary->modelClass;
-
-        foreach ($model->find()->all() as $secondary)
-        {
-            if (!isset($availables[$secondary->primaryKey]))
-            {
-                $availables[$secondary->primaryKey] = $this->_createInterpretation($secondary);
-            }
-        }
-
-        ksort($availables);
-
-        return $availables;
-    }
-
-    /**
-     * Sets model relations attributes
+     * Sets all model relations attributes
      * @param array $data relations data to be set
      */
-    public function setAvailableInterpretations($data)
+    public function setAllInterpretations($data)
     {
         $model = $this->viaModel;
 
-        $model::loadMultiple($this->getAllInterpretations(), $data);
+        $this->_relationsToSave = $this->getAllInterpretations();
+
+        $model::loadMultiple($this->_relationsToSave, $data);
 
         return $this;
     }
@@ -190,9 +204,9 @@ class Interpreter {
     {
         $valid = true;
 
-        foreach ($this->getAllInterpretations() as $model)
+        foreach ($this->_relationsToSave as $model)
         {
-            $model->{$this->relPrimaryKey} = 0;
+            $model->{$this->relPrimaryKey} = ($this->owner->primaryKey) ? $this->owner->primaryKey : 0;
 
             if (!$model->validate())
             {
@@ -209,57 +223,61 @@ class Interpreter {
      */
     public function save()
     {
-        $valid = true;
+        $saved = true;
 
-        foreach ($this->getAllInterpretations() as $model)
+        foreach ($this->_relationsToSave as $model)
         {
             $model->{$this->relPrimaryKey} = $this->owner->primaryKey;
 
             if (!$model->save())
             {
-                $valid = false;
+                $saved = false;
             }
         }
 
-        return $valid;
+        return $saved;
     }
 
     /**
-     * Indicates if given relations is valid to be assigned to owner
-     * @param CActiveRecord $interpretation given interpretation
-     * @param array $relationConfig interpretation relation config
-     * @return boolean TRUE if is valid, FALSE otherwise
+     * Default method for getting all owner's possible hasMany relation models.
+     * This can be overloaded and changed in owner's model class.
      */
-    private function _isInterpretationValid($interpretation, $relationConfig)
+    protected function pushMissingInterpretations($availables, $keys = [])
     {
-        if (!$this->partial)
+        $model = new $this->relSecondary->modelClass;
+
+        if (!empty($keys))
         {
-            return true;
+            $models = $model->findAll($keys);
+        }
+        else
+        {
+            $models = $model->find()->all();
         }
 
-        $activationTrigger = false;
-
-        foreach ($this->activationTriggers as $attr)
+        foreach ($models as $secondary)
         {
-            if (isset($interpretation->{$attr}) && !empty($interpretation->{$attr}))
+            if (!isset($availables[$secondary->primaryKey]))
             {
-                $activationTrigger = true;
+                $availables[$secondary->primaryKey] = $this->_createInterpretation($secondary->primaryKey);
             }
         }
 
-        return !$interpretation->isNewRecord || (boolean) $interpretation->{$this->_attrActive} || $activationTrigger || $interpretation->validate();
+        ksort($availables);
+
+        return $availables;
     }
 
     /**
      * Creates new interpretation and assigns it with owner
      * @param \yii\db\ActiveRecord $secondary given secondary instance
      */
-    private function _createInterpretation($secondary)
+    private function _createInterpretation($secondaryKey)
     {
         $model = new $this->viaModel;
 
         $model->{$this->relPrimaryKey} = $this->owner->primaryKey;
-        $model->{$this->relSecondaryKey} = $secondary->primaryKey;
+        $model->{$this->relSecondaryKey} = $secondaryKey;
 
         return $model;
     }

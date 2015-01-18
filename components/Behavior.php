@@ -42,7 +42,7 @@ class Behavior extends \yii\base\Behavior {
     /**
      * @var boolean indicates interpretation validity
      */
-    private $valid;
+    private $valid = null;
 
     /**
      * Returns the value of an object property.
@@ -54,7 +54,7 @@ class Behavior extends \yii\base\Behavior {
         {
             return parent::__get($name);
         }
-        
+
         return $this->getInterpretation($name);
     }
 
@@ -93,7 +93,7 @@ class Behavior extends \yii\base\Behavior {
      */
     public function handleValidate()
     {
-        $this->valid = $this->setAvailableInterpretations(\Yii::$app->request->post())->validate();
+        $this->valid = $this->setInterpretations(\Yii::$app->request->post())->validate();
     }
 
     /**
@@ -102,6 +102,11 @@ class Behavior extends \yii\base\Behavior {
      */
     public function handleBeforeSave($event)
     {
+        if (null === $this->valid)
+        {
+            $this->handleValidate();
+        }
+        
         $event->isValid = $this->valid;
     }
 
@@ -128,27 +133,36 @@ class Behavior extends \yii\base\Behavior {
      * Sets model interpretetion attributes (related model attributes)
      * @param type $data
      */
-    public function setInterpretation($data, $index)
+    public function setInterpretation($data)
     {
-        return $this->interpreter()->setAvailableInterpretations($data, $index, $this->owner);
+        return $this->interpreter()->setInterpretations($data);
     }
 
     /**
-     * Retrieves available owner's hasMany relations.
+     * Retrieves specific owner's hasMany relations.
      * @return array hasMany relation models array
      */
-    public function getAvailableInterpretations()
+    public function getInterpretations($data = [])
     {
-        return $this->interpreter()->getAvailableInterpretations();
+        return $this->interpreter()->getInterpretations($data);
     }
 
     /**
-     * Sets model interpretetions
+     * Sets specific model interpretetions
      * @param type $data
      */
-    public function setAvailableInterpretations($data)
+    public function setInterpretations($data)
     {
-        return $this->interpreter()->setAvailableInterpretations($data);
+        return $this->interpreter()->setInterpretations($data);
+    }
+
+    /**
+     * Sets all possible model interpretations
+     * @return type
+     */
+    public function setAllInterpretations()
+    {
+        return $this->interpreter()->setAllInterpretations();
     }
 
     /**
