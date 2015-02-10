@@ -291,7 +291,7 @@ class Interpreter {
     {
         if (count($config) < 4)
         {
-            throw new Exception(Yii::t('ib', 'Invalid config for interpreter. Missing required keys.'));
+            throw new \yii\base\Exception(\Yii::t('ib', 'Invalid config for interpreter. Missing required keys.'));
         }
 
         $this->viaModel = new $config[self::INDEX_VIA_CLASS];
