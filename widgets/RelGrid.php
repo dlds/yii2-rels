@@ -13,47 +13,23 @@ use yii\helpers\ArrayHelper;
 /**
  * Widget handles many many input widgets
  */
-class RelGrid extends \yii\widgets\InputWidget {
-
-    /**
-     * @var mixed attribute name to be used as header title or FALSE to use relation index
-     */
-    public $header = false;
-
-    /**
-     * @var string current form
-     */
-    public $form;
-
-    /**
-     * @var string tab view file path
-     */
-    public $colView;
+class RelGrid extends \dlds\rels\components\Widget {
 
     /**
      * @var string widget calss
      */
-    public $colClass = '\yii\grid\Column';
+    public $relViewClass = '\yii\grid\Column';
 
     /**
-     * @var array relations to be interpreted
+     * @var mixed holds RelGrid row actions 
      */
-    private $_relations = array();
-
-    /**
-     * @var array interpreter tabs to be rendered
-     */
-    private $_cols = array();
+    public $actions;
 
     /**
      * Initializes the menu widget.
      */
     public function init()
     {
-        $this->_initRelations();
-
-        $this->_initGrid();
-
         parent::init();
     }
 
@@ -62,29 +38,19 @@ class RelGrid extends \yii\widgets\InputWidget {
      */
     public function run()
     {
-        //$html = $this->owner->errorSummary($this->_relations);
-
-        $this->renderGrid();
-    }
-
-    /**
-     * Inits relations
-     */
-    private function _initRelations()
-    {
-        $this->_relations = $this->model->getAllInterpretations();
+        parent::run();
     }
 
     /**
      * Inits tabs
      */
-    private function _initGrid()
+    protected function initViews()
     {
         foreach ($this->_relations as $id => $relation)
         {
-            $this->_cols[] = array(
-                'label' => $this->_parseHeader($relation, $id),
-                'content' => $this->render($this->colView, array(
+            $this->_relViews[] = array(
+                'label' => $this->parseHeader($relation, $id),
+                'content' => $this->render($this->relView, array(
                     'form' => $this->form,
                     'model' => $relation,
                     'id' => $id,
@@ -97,59 +63,27 @@ class RelGrid extends \yii\widgets\InputWidget {
      * Renders interpreter tabs
      * @return string tabs
      */
-    private function renderGrid()
+    protected function renderViews()
     {
-        $columns = ArrayHelper::getColumn($this->_cols, 'label');
+        $columns = ArrayHelper::getColumn($this->_relViews, function($element) {
+                    return sprintf('%s:raw', $element['label']);
+                });
+
+        if ($this->actions)
+        {
+            array_push($columns, $this->actions);
+        }
 
         $provider = new \yii\data\ArrayDataProvider([
-            'allModels' => [ArrayHelper::map($this->_cols, 'label', 'content')],
+            'allModels' => [ArrayHelper::map($this->_relViews, 'label', 'content')],
         ]);
 
         echo \yii\grid\GridView::widget([
             'dataProvider' => $provider,
-            'columns' => [
-                [
-                    'label' => 'Datum',
-                    'format' => 'raw',
-                ]
-            ],
+            'columns' => $columns,
             'layout' => '{items}',
             'pager' => false,
         ]);
-    }
-
-    /**
-     * Parses and retrieves header based on given template
-     * @param CActiveRecord $relation given model
-     * @param string $default default value to be retrieves
-     * @return string header
-     */
-    private function _parseHeader($relation, $default = false)
-    {
-        if (false !== $this->header)
-        {
-            $attributes = explode('.', $this->header);
-
-            foreach ($attributes as $attribute)
-            {
-                if (isset($relation->{$attribute}))
-                {
-                    $relation = $relation->{$attribute};
-                }
-            }
-        }
-
-        if (!is_string($relation))
-        {
-            if ($default !== false)
-            {
-                return $default;
-            }
-
-            return $relation->primaryKey;
-        }
-
-        return $relation;
     }
 
 }

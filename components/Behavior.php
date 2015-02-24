@@ -106,7 +106,7 @@ class Behavior extends \yii\base\Behavior {
         {
             $this->handleValidate();
         }
-        
+
         $event->isValid = $this->valid;
     }
 
@@ -140,11 +140,11 @@ class Behavior extends \yii\base\Behavior {
 
     /**
      * Retrieves specific owner's hasMany relations.
-     * @return array hasMany relation models array
+     * @return mixed hasMany relation models array
      */
-    public function getInterpretations($data = [])
+    public function getInterpretations($restrictions = null)
     {
-        return $this->interpreter()->getInterpretations($data);
+        return $this->interpreter($restrictions)->getInterpretations();
     }
 
     /**
@@ -157,31 +157,31 @@ class Behavior extends \yii\base\Behavior {
     }
 
     /**
-     * Sets all possible model interpretations
-     * @return type
-     */
-    public function setAllInterpretations()
-    {
-        return $this->interpreter()->setAllInterpretations();
-    }
-
-    /**
      * Retrieves all possible model interpretations
      * @return type
      */
-    public function getAllInterpretations()
+    public function getAllInterpretations($restrictions = null)
     {
-        return $this->interpreter()->getAllInterpretations();
+        return $this->interpreter($restrictions)->getAllInterpretations();
+    }
+
+    /**
+     * Sets all possible model interpretations
+     * @return type
+     */
+    public function setAllInterpretations($data)
+    {
+        return $this->interpreter()->setAllInterpretations($data);
     }
 
     /**
      * Retrieves instance to multilang interperter
      */
-    private function interpreter()
+    private function interpreter($restrictions = null)
     {
         if (null === $this->_interpreter)
         {
-            $this->_interpreter = new Interpreter($this->owner, $this->config);
+            $this->_interpreter = new Interpreter($this->owner, $this->config, $restrictions);
         }
 
         return $this->_interpreter;

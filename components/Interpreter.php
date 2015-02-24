@@ -32,6 +32,11 @@ class Interpreter {
     public $owner;
 
     /**
+     * @var array restriction condition
+     */
+    public $restriction;
+
+    /**
      * @var \yii\db\ActiveRecord via class name
      */
     public $viaModel;
@@ -77,10 +82,11 @@ class Interpreter {
      * @param array $config given configs
      * @param array $scopes given scopes
      */
-    public function __construct($owner, $config)
+    public function __construct($owner, $config, $restriction = [])
     {
         // TODO: implement scopes, partial, activationTriggers
         $this->owner = $owner;
+        $this->restriction = $restriction;
 
         $this->_loadInterpreterConfig($config);
     }
@@ -131,15 +137,15 @@ class Interpreter {
      * Retrieves interpretations based on gived data
      * @param array $data
      */
-    public function getInterpretations($data = [])
+    public function getInterpretations($data = null)
     {
         $condition = [$this->relPrimaryKey => $this->owner->primaryKey];
 
-        if ($data)
-        {
-            $secondaryKeys = ArrayHelper::getColumn($data, $this->relSecondaryKey);
+        $restrictions = $this->_getRestrictions($data, $this->relSecondaryKey, false);
 
-            ArrayHelper::merge($condition, [$this->relSecondaryKey => $secondaryKeys]);
+        if ($restrictions)
+        {
+            $condition = ArrayHelper::merge($condition, $restrictions);
         }
 
         return $this->viaModel->find()
@@ -154,14 +160,14 @@ class Interpreter {
      */
     public function setInterpretations($data)
     {
-        /** @var \yii\db\ActiveRecord $model */
-        $secondaryKeys = ArrayHelper::getColumn(ArrayHelper::getValue($data, $this->viaModel->formName(), []), $this->relSecondaryKey);
-
-        if (!empty($secondaryKeys))
+        if ($data && ArrayHelper::getValue($data, $this->viaModel->formName(), false))
         {
-            $this->_relationsToSave = $this->pushMissingInterpretations($this->getInterpretations($secondaryKeys), $secondaryKeys);
+            $this->_relationsToSave = $this->pushMissingInterpretations($this->getInterpretations($data), $data);
 
-            $this->viaModel->loadMultiple($this->_relationsToSave, $data);
+            if ($this->_relationsToSave)
+            {
+                $this->viaModel->loadMultiple($this->_relationsToSave, $data);
+            }
         }
 
         return $this;
@@ -242,20 +248,28 @@ class Interpreter {
      * Default method for getting all owner's possible hasMany relation models.
      * This can be overloaded and changed in owner's model class.
      */
-    protected function pushMissingInterpretations($availables, $keys = [])
+    protected function pushMissingInterpretations($availables, $data = null)
     {
-        $model = new $this->relSecondary->modelClass;
+        /* @var $secondaryModel \yii\db\ActiveRecord */
+        $secondaryModel = new $this->relSecondary->modelClass;
 
-        if (!empty($keys))
+        $queryModel = $secondaryModel->find();
+
+        $restrictions = $this->_getRestrictions($data, $this->_getPrimaryKeyName($secondaryModel));
+
+        $viaRestriction = ArrayHelper::remove($restrictions, $this->relSecondaryKey, false);
+        
+        if (false !== $viaRestriction)
         {
-            $models = $model->findAll($keys);
-        }
-        else
-        {
-            $models = $model->find()->all();
+            $restrictions[$this->_getPrimaryKeyName($secondaryModel)] = $viaRestriction;
         }
 
-        foreach ($models as $secondary)
+        if ($restrictions)
+        {
+            $queryModel->where($restrictions);
+        }
+
+        foreach ($queryModel->all() as $secondary)
         {
             if (!isset($availables[$secondary->primaryKey]))
             {
@@ -266,6 +280,56 @@ class Interpreter {
         ksort($availables);
 
         return $availables;
+    }
+
+    /**
+     * Parses and retrieves keys from given data
+     * @param type $data
+     */
+    private function _getRestrictions($data, $secodaryKey, $allowGlobal = true)
+    {
+        $restrictions = [];
+
+        if ($data)
+        {
+            $restrictions[$secodaryKey] = $this->_getSecondaryKeys($data, $this->viaModel->formName());
+        }
+
+        if ($allowGlobal && $this->restriction)
+        {
+            $restrictions = ArrayHelper::merge($restrictions, $this->restriction);
+        }
+
+        return $restrictions;
+    }
+
+    /**
+     * Retrieves secondary keys
+     * @param type $data
+     */
+    private function _getSecondaryKeys($data, $key = null)
+    {
+        if ($key)
+        {
+            $data = ArrayHelper::getValue($data, $key, []);
+        }
+
+        return ArrayHelper::getColumn($data, $this->relSecondaryKey);
+    }
+
+    /**
+     * Retrieves primary key name
+     */
+    private function _getPrimaryKeyName(\yii\db\ActiveRecord $model, $composite = false)
+    {
+        $primaryKey = $model->primaryKey();
+
+        if (!$composite && count($primaryKey) > 1)
+        {
+            throw new Exception('Model has composit key which is not allowed. Relations cannot be established');
+        }
+
+        return array_shift($primaryKey);
     }
 
     /**

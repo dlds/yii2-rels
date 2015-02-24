@@ -8,15 +8,12 @@
 
 namespace dlds\rels\widgets;
 
+use yii\helpers\ArrayHelper;
+
 /**
  * Widget handles many many input widgets
  */
-class RelTabs extends \dlds\rels\components\Widget {
-
-    /**
-     * @var string widget calss
-     */
-    public $relViewClass = '\yii\jui\Tabs';
+class RelView extends \dlds\rels\components\Widget {
 
     /**
      * Initializes the menu widget.
@@ -41,14 +38,11 @@ class RelTabs extends \dlds\rels\components\Widget {
     {
         foreach ($this->_relations as $id => $relation)
         {
-            $this->_relViews[] = array(
-                'label' => $this->parseHeader($relation, $id),
-                'content' => $this->render($this->relView, array(
-                    'form' => $this->form,
-                    'model' => $relation,
-                    'id' => $id,
-                        ), true),
-            );
+            $this->_relViews[] = $this->render($this->relView, [
+                'form' => $this->form,
+                'model' => $relation,
+                'id' => $id,
+                    ], true);
         }
     }
 
@@ -58,14 +52,10 @@ class RelTabs extends \dlds\rels\components\Widget {
      */
     protected function renderViews()
     {
-        $widget = $this->relViewClass;
-
-        echo $widget::widget(array(
-            'items' => $this->_relViews,
-            'options' => array(
-                'collapsible' => true,
-            ),
-        ));
+        foreach ($this->_relViews as $view)
+        {
+            echo $view;
+        }
     }
 
 }
