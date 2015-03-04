@@ -148,10 +148,10 @@ class Interpreter {
             $condition = ArrayHelper::merge($condition, $restrictions);
         }
 
-        return $this->viaModel->find()
-                        ->where($condition)
-                        ->indexBy($this->relSecondaryKey)
-                        ->all();
+        return ArrayHelper::merge($this->viaModel->find()
+                                ->where($condition)
+                                ->indexBy($this->relSecondaryKey)
+                                ->all(), $this->_relationsToSave);
     }
 
     /**
@@ -258,7 +258,7 @@ class Interpreter {
         $restrictions = $this->_getRestrictions($data, $this->_getPrimaryKeyName($secondaryModel));
 
         $viaRestriction = ArrayHelper::remove($restrictions, $this->relSecondaryKey, false);
-        
+
         if (false !== $viaRestriction)
         {
             $restrictions[$this->_getPrimaryKeyName($secondaryModel)] = $viaRestriction;

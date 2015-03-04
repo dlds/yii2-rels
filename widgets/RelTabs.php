@@ -31,7 +31,7 @@ class RelTabs extends \dlds\rels\components\Widget {
      */
     public function run()
     {
-        parent::run();
+        return parent::run();
     }
 
     /**

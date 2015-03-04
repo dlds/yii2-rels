@@ -57,7 +57,7 @@ class Behavior extends \yii\base\Behavior {
 
         return $this->getInterpretation($name);
     }
-
+    
     /**
      * Indicates whether a property can be read.
      * @param string $name the property name
@@ -106,7 +106,7 @@ class Behavior extends \yii\base\Behavior {
         {
             $this->handleValidate();
         }
-
+        
         $event->isValid = $this->valid;
     }
 
