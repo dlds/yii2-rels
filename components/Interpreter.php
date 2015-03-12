@@ -34,7 +34,7 @@ class Interpreter {
     /**
      * @var array restriction condition
      */
-    public $restrictions;
+    public $restriction;
 
     /**
      * @var \yii\db\ActiveRecord via class name
@@ -146,11 +146,11 @@ class Interpreter {
     {
         $condition = [$this->relPrimaryKey => $this->owner->primaryKey];
 
-        $restrictions = $this->_getRestrictions($data, $this->relSecondaryKey, true);
+        $restriction = $this->_getRestriction($data, $this->relSecondaryKey, true);
 
-        if ($restrictions)
+        if ($restriction)
         {
-            $condition = ArrayHelper::merge($condition, $restrictions);
+            $condition = ArrayHelper::merge($condition, $restriction);
         }
 
         return ArrayHelper::merge($this->viaModel->find()
@@ -215,7 +215,7 @@ class Interpreter {
      */
     public function setRestriction(array $restriction)
     {
-        $this->restrictions = $restriction;
+        $this->restriction = $restriction;
     }
 
     /**
@@ -271,18 +271,18 @@ class Interpreter {
 
         $queryModel = $secondaryModel->find();
 
-        $restrictions = $this->_getRestrictions($data, $this->_getPrimaryKeyName($secondaryModel));
+        $restriction = $this->_getRestriction($data, $this->_getPrimaryKeyName($secondaryModel));
 
-        $viaRestriction = ArrayHelper::remove($restrictions, $this->relSecondaryKey, false);
+        $viaRestriction = ArrayHelper::remove($restriction, $this->relSecondaryKey, false);
 
         if (false !== $viaRestriction)
         {
-            $restrictions[$this->_getPrimaryKeyName($secondaryModel)] = $viaRestriction;
+            $restriction[$this->_getPrimaryKeyName($secondaryModel)] = $viaRestriction;
         }
 
-        if ($restrictions)
+        if ($restriction)
         {
-            $queryModel->where($restrictions);
+            $queryModel->where($restriction);
         }
 
         foreach ($queryModel->all() as $secondary)
@@ -302,21 +302,21 @@ class Interpreter {
      * Parses and retrieves keys from given data
      * @param type $data
      */
-    private function _getRestrictions($data, $secodaryKey, $allowGlobal = true)
+    private function _getRestriction($data, $secodaryKey, $allowGlobal = true)
     {
-        $restrictions = [];
+        $restriction = [];
 
         if ($data)
         {
-            $restrictions[$secodaryKey] = $this->_getSecondaryKeys($data, $this->viaModel->formName());
+            $restriction[$secodaryKey] = $this->_getSecondaryKeys($data, $this->viaModel->formName());
         }
 
-        if ($allowGlobal && $this->restrictions)
+        if ($allowGlobal && $this->restriction)
         {
-            $restrictions = ArrayHelper::merge($restrictions, $this->restrictions);
+            $restriction = ArrayHelper::merge($restriction, $this->restriction);
         }
 
-        return $restrictions;
+        return $restriction;
     }
 
     /**
@@ -364,7 +364,7 @@ class Interpreter {
 
     private function _getInterpreterHash()
     {
-        return md5(serialize($this->restrictions));
+        return md5(serialize($this->restriction));
     }
 
     /**

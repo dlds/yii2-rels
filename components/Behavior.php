@@ -147,7 +147,7 @@ class Behavior extends \yii\base\Behavior {
      * Retrieves specific owner's hasMany relations.
      * @return mixed hasMany relation models array
      */
-    public function getInterpretations($restriction = null)
+    public function getInterpretations($restriction = [])
     {
         return $this->interpreter($restriction)->getInterpretations();
     }
@@ -165,7 +165,7 @@ class Behavior extends \yii\base\Behavior {
      * Retrieves all possible model interpretations
      * @return type
      */
-    public function getAllInterpretations($restriction = null)
+    public function getAllInterpretations($restriction = [])
     {
         return $this->interpreter($restriction)->getAllInterpretations();
     }

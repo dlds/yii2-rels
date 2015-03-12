@@ -38,7 +38,7 @@ abstract class Widget extends \yii\widgets\InputWidget {
     /**
      * @var mixed restriction condition
      */
-    public $restriction;
+    public $restriction = [];
     
     /**
      * @var array relations to be interpreted
