@@ -34,7 +34,7 @@ class Interpreter {
     /**
      * @var array restriction condition
      */
-    public $restriction;
+    public $restrictions;
 
     /**
      * @var \yii\db\ActiveRecord via class name
@@ -67,9 +67,14 @@ class Interpreter {
     public $relSecondaryKey;
 
     /**
+     * @var boolean indicates if cache is allowed
+     */
+    protected $allowCache = true;
+
+    /**
      * @var array holds actual all interpretations
      */
-    private $_allInterpretations;
+    private $_allInterpretations = [];
 
     /**
      * @var array relations to save
@@ -78,15 +83,15 @@ class Interpreter {
 
     /**
      * Construcor
-     * @param \yii\db\ActiveRecord $owner owner model
+     * @param \yii\db\ActiveRecord $owner owner modela 
      * @param array $config given configs
      * @param array $scopes given scopes
      */
-    public function __construct($owner, $config, $restriction = [])
+    public function __construct($owner, $config, $allowCache = true)
     {
         // TODO: implement scopes, partial, activationTriggers
         $this->owner = $owner;
-        $this->restriction = $restriction;
+        $this->allowCache = $allowCache;
 
         $this->_loadInterpreterConfig($config);
     }
@@ -141,8 +146,9 @@ class Interpreter {
     {
         $condition = [$this->relPrimaryKey => $this->owner->primaryKey];
 
-        $restrictions = $this->_getRestrictions($data, $this->relSecondaryKey, false);
+        $restrictions = $this->_getRestrictions($data, $this->relSecondaryKey, true);
 
+        var_dump($restrictions);
         if ($restrictions)
         {
             $condition = ArrayHelper::merge($condition, $restrictions);
@@ -179,12 +185,14 @@ class Interpreter {
      */
     public function getAllInterpretations()
     {
-        if (!$this->_allInterpretations)
+        $hash = $this->_getInterpreterHash();
+
+        if (!$this->allowCache || empty($this->_allInterpretations[$hash]))
         {
-            $this->_allInterpretations = $this->pushMissingInterpretations($this->getInterpretations());
+            $this->_allInterpretations[$hash] = $this->pushMissingInterpretations($this->getInterpretations());
         }
 
-        return $this->_allInterpretations;
+        return $this->_allInterpretations[$hash];
     }
 
     /**
@@ -200,6 +208,15 @@ class Interpreter {
         $model::loadMultiple($this->_relationsToSave, $data);
 
         return $this;
+    }
+
+    /**
+     * Sets interpreter restriction
+     * @param array $restriction given restriction
+     */
+    public function setRestriction(array $restriction)
+    {
+        $this->restrictions = $restriction;
     }
 
     /**
@@ -295,9 +312,9 @@ class Interpreter {
             $restrictions[$secodaryKey] = $this->_getSecondaryKeys($data, $this->viaModel->formName());
         }
 
-        if ($allowGlobal && $this->restriction)
+        if ($allowGlobal && $this->restrictions)
         {
-            $restrictions = ArrayHelper::merge($restrictions, $this->restriction);
+            $restrictions = ArrayHelper::merge($restrictions, $this->restrictions);
         }
 
         return $restrictions;
@@ -344,6 +361,11 @@ class Interpreter {
         $model->{$this->relSecondaryKey} = $secondaryKey;
 
         return $model;
+    }
+
+    private function _getInterpreterHash()
+    {
+        return md5(serialize($this->restrictions));
     }
 
     /**

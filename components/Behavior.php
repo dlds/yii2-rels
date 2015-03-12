@@ -40,6 +40,11 @@ class Behavior extends \yii\base\Behavior {
     public $attrs;
 
     /**
+     * @var boolean indicates if cache is allowed
+     */
+    public $allowCache = true;
+
+    /**
      * @var boolean indicates interpretation validity
      */
     private $valid = null;
@@ -57,7 +62,7 @@ class Behavior extends \yii\base\Behavior {
 
         return $this->getInterpretation($name);
     }
-    
+
     /**
      * Indicates whether a property can be read.
      * @param string $name the property name
@@ -106,7 +111,7 @@ class Behavior extends \yii\base\Behavior {
         {
             $this->handleValidate();
         }
-        
+
         $event->isValid = $this->valid;
     }
 
@@ -142,9 +147,9 @@ class Behavior extends \yii\base\Behavior {
      * Retrieves specific owner's hasMany relations.
      * @return mixed hasMany relation models array
      */
-    public function getInterpretations($restrictions = null)
+    public function getInterpretations($restriction = null)
     {
-        return $this->interpreter($restrictions)->getInterpretations();
+        return $this->interpreter($restriction)->getInterpretations();
     }
 
     /**
@@ -160,9 +165,9 @@ class Behavior extends \yii\base\Behavior {
      * Retrieves all possible model interpretations
      * @return type
      */
-    public function getAllInterpretations($restrictions = null)
+    public function getAllInterpretations($restriction = null)
     {
-        return $this->interpreter($restrictions)->getAllInterpretations();
+        return $this->interpreter($restriction)->getAllInterpretations();
     }
 
     /**
@@ -177,12 +182,14 @@ class Behavior extends \yii\base\Behavior {
     /**
      * Retrieves instance to multilang interperter
      */
-    private function interpreter($restrictions = null)
+    private function interpreter(array $restriction = [])
     {
         if (null === $this->_interpreter)
         {
-            $this->_interpreter = new Interpreter($this->owner, $this->config, $restrictions);
+            $this->_interpreter = new Interpreter($this->owner, $this->config, $this->allowCache);
         }
+
+        $this->_interpreter->setRestriction($restriction);
 
         return $this->_interpreter;
     }
