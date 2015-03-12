@@ -148,7 +148,6 @@ class Interpreter {
 
         $restrictions = $this->_getRestrictions($data, $this->relSecondaryKey, true);
 
-        var_dump($restrictions);
         if ($restrictions)
         {
             $condition = ArrayHelper::merge($condition, $restrictions);
