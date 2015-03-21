@@ -58,14 +58,23 @@ class RelTabs extends \dlds\rels\components\Widget {
      */
     protected function renderViews()
     {
-        $widget = $this->relViewClass;
+        if (empty($this->_relViews))
+        {
+            $message = \Yii::t('dlds/rels/widgets', 'RelTabs widget cannot be generated. No related models exist. Please create at least one relation model first.');
+            
+            echo \yii\helpers\Html::tag('div', $message, ['class' => 'alert alert-warning']);
+        }
+        else
+        {
+            $widget = $this->relViewClass;
 
-        echo $widget::widget(array(
-            'items' => $this->_relViews,
-            'options' => array(
-                'collapsible' => true,
-            ),
-        ));
+            echo $widget::widget(array(
+                'items' => $this->_relViews,
+                'options' => array(
+                    'collapsible' => true,
+                ),
+            ));
+        }
     }
 
 }
