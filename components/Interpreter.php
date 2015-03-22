@@ -224,14 +224,21 @@ class Interpreter {
      */
     public function validate()
     {
+        /* @var $model \yii\db\ActiveRecord */
         $valid = true;
 
         foreach ($this->_relationsToSave as $model)
         {
-            $model->{$this->relPrimaryKey} = ($this->owner->primaryKey) ? $this->owner->primaryKey : 0;
+            $model->{$this->relPrimaryKey} = ($this->owner->primaryKey) ? $this->owner->primaryKey : null;
 
-            if (!$model->validate())
+            $attributes = $model->getAttributes();
+
+            ArrayHelper::remove($attributes, $this->relPrimaryKey);
+
+            if (!$model->validate($attributes))
             {
+                $this->owner->addErrors($model->getErrors());
+
                 $valid = false;
             }
         }
@@ -253,6 +260,8 @@ class Interpreter {
 
             if (!$model->save())
             {
+                $this->owner->addErrors($model->getErrors());
+
                 $saved = false;
             }
         }
