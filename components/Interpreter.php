@@ -168,6 +168,8 @@ class Interpreter {
     {
         if ($data && ArrayHelper::getValue($data, $this->viaModel->formName(), false))
         {
+            $data = $this->pushSecondaryKeys($data, $this->viaModel->formName());
+
             $this->_relationsToSave = $this->pushMissingInterpretations($this->getInterpretations($data), $data);
 
             if ($this->_relationsToSave)
@@ -266,6 +268,24 @@ class Interpreter {
         }
 
         return $saved;
+    }
+
+    /**
+     * Pushes secondary keys to given data
+     * @param array $data
+     * @param string $form
+     */
+    protected function pushSecondaryKeys($data, $form)
+    {
+        if (isset($data[$form]) && is_array($data[$form]))
+        {
+            foreach ($data[$form] as $secondaryKey => $values)
+            {
+                $data[$form][$secondaryKey][$this->relSecondaryKey] = $secondaryKey;
+            }
+        }
+        
+        return $data;
     }
 
     /**
