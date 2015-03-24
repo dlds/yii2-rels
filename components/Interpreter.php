@@ -155,6 +155,7 @@ class Interpreter {
 
         return ArrayHelper::merge($this->viaModel->find()
                                 ->where($condition)
+                                ->andWhere(['not in', $this->relSecondaryKey, array_keys($this->_relationsToSave)])
                                 ->indexBy($this->relSecondaryKey)
                                 ->all(), $this->_relationsToSave);
     }
@@ -171,7 +172,7 @@ class Interpreter {
 
             if ($this->_relationsToSave)
             {
-                $this->viaModel->loadMultiple($this->_relationsToSave, $data);
+                $this->viaModel->loadMultiple($this->_relationsToSave, $data, $this->viaModel->formName());
             }
         }
 
@@ -231,9 +232,7 @@ class Interpreter {
         {
             $model->{$this->relPrimaryKey} = ($this->owner->primaryKey) ? $this->owner->primaryKey : null;
 
-            $attributes = $model->getAttributes();
-
-            ArrayHelper::remove($attributes, $this->relPrimaryKey);
+            $attributes = array_diff($model->activeAttributes(), [$this->relPrimaryKey]);
 
             if (!$model->validate($attributes))
             {
