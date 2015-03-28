@@ -93,6 +93,30 @@ class Behavior extends \yii\base\Behavior {
     }
 
     /**
+     * Validates request data
+     * @return boolean TRUE on success, otherwise FALSE
+     */
+    public function validate()
+    {
+        $this->handleValidate();
+
+        return $this->valid;
+    }
+
+    /**
+     * Invokes indepent save
+     */
+    public function save($runValidation = true)
+    {
+        if (!$runValidation || $this->validate())
+        {
+            return $this->interpreter()->save();
+        }
+
+        return false;
+    }
+
+    /**
      * Handles validation interpretetaions given in post
      * @param \yii\base\Event $event
      */
