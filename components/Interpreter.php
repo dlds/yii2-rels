@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @link http://www.digitaldeals.cz/
  * @copyright Copyright (c) 2014 Digital Deals s.r.o. 
@@ -17,10 +16,10 @@ use yii\helpers\StringHelper;
  * @author Jiri Svoboda <jiri.svoboda@dlds.cz>
  */
 class Interpreter {
+
     /*
      * Relations indexes
      */
-
     const INDEX_VIA_CLASS = 0;
     const INDEX_REL_PRIMARY = 1;
     const INDEX_REL_SECONDARY = 2;
@@ -154,10 +153,10 @@ class Interpreter {
         }
 
         return ArrayHelper::merge($this->viaModel->find()
-                                ->where($condition)
-                                ->andWhere(['not in', $this->relSecondaryKey, array_keys($this->_relationsToSave)])
-                                ->indexBy($this->relSecondaryKey)
-                                ->all(), $this->_relationsToSave);
+                    ->where($condition)
+                    ->andWhere(['not in', $this->relSecondaryKey, array_keys($this->_relationsToSave)])
+                    ->indexBy($this->relSecondaryKey)
+                    ->all(), $this->_relationsToSave);
     }
 
     /**
@@ -284,7 +283,7 @@ class Interpreter {
                 $data[$form][$secondaryKey][$this->relSecondaryKey] = $secondaryKey;
             }
         }
-        
+
         return $data;
     }
 
@@ -402,14 +401,17 @@ class Interpreter {
      */
     private function _loadInterpreterConfig($config)
     {
-        if (count($config) < 4)
+        if (count($config) < 3)
         {
             throw new \yii\base\Exception(\Yii::t('ib', 'Invalid config for interpreter. Missing required keys.'));
         }
 
         $this->viaModel = new $config[self::INDEX_VIA_CLASS];
 
-        $this->viaCurrent = $config[self::INDEX_VIA_CURRENT];
+        if (isset($config[self::INDEX_VIA_CURRENT]))
+        {
+            $this->viaCurrent = $config[self::INDEX_VIA_CURRENT];
+        }
 
         $this->relPrimary = $this->viaModel->getRelation($config[self::INDEX_REL_PRIMARY]);
 
@@ -419,5 +421,4 @@ class Interpreter {
 
         $this->relSecondaryKey = array_pop($this->relSecondary->link);
     }
-
 }

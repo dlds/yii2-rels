@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @link http://www.digitaldeals.cz/
  * @copyright Copyright (c) 2014 Digital Deals s.r.o. 
@@ -31,15 +30,20 @@ abstract class Widget extends \yii\widgets\InputWidget {
     public $relView;
 
     /**
-     * @var relView class
+     * @var string relView class
      */
     public $relViewClass;
+
+    /**
+     * @var string behavior name
+     */
+    public $behaviorName = null;
 
     /**
      * @var mixed restriction condition
      */
     public $restriction = [];
-    
+
     /**
      * @var array relations to be interpreted
      */
@@ -75,7 +79,14 @@ abstract class Widget extends \yii\widgets\InputWidget {
      */
     protected function initRelations()
     {
-        $this->_relations = $this->model->getAllInterpretations($this->restriction);
+        if ($this->behaviorName)
+        {
+            $this->_relations = $this->model->getBehavior($this->behaviorName)->getAllInterpretations($this->restriction);
+        }
+        else
+        {
+            $this->_relations = $this->model->getAllInterpretations($this->restriction);
+        }
     }
 
     /**
@@ -122,5 +133,4 @@ abstract class Widget extends \yii\widgets\InputWidget {
 
         return $relation;
     }
-
 }
