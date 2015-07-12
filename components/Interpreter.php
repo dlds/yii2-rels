@@ -145,7 +145,7 @@ class Interpreter {
     {
         $condition = [$this->relPrimaryKey => $this->owner->primaryKey];
 
-        $restriction = $this->_getRestriction($data, $this->relSecondaryKey, true);
+        $restriction = $this->_getRestriction($data, $this->relSecondaryKey, false);
 
         if ($restriction)
         {
