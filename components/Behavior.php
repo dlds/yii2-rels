@@ -206,7 +206,7 @@ class Behavior extends \yii\base\Behavior {
     /**
      * Retrieves instance to multilang interperter
      */
-    private function interpreter(array $restriction = [])
+    public function interpreter(array $restriction = [])
     {
         if (null === $this->_interpreter)
         {
