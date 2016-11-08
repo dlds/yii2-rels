@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @link http://www.digitaldeals.cz/
  * @copyright Copyright (c) 2014 Digital Deals s.r.o. 
@@ -15,11 +16,12 @@ use yii\helpers\StringHelper;
  * 
  * @author Jiri Svoboda <jiri.svoboda@dlds.cz>
  */
-class Interpreter {
-
+class Interpreter
+{
     /*
      * Relations indexes
      */
+
     const INDEX_VIA_CLASS = 0;
     const INDEX_REL_PRIMARY = 1;
     const INDEX_REL_SECONDARY = 2;
@@ -102,20 +104,17 @@ class Interpreter {
      */
     public function interpretAttribute($attribute, $index = null)
     {
-        if ($index)
-        {
+        if ($index) {
             $availables = $this->getInterpretations();
 
-            if (isset($availables[$index]))
-            {
+            if (isset($availables[$index])) {
                 return $availables[$index]->{$attribute};
             }
         }
 
         $current = $this->getCurrentInterpretation();
 
-        if ($current)
-        {
+        if ($current) {
             return $current->{$attribute};
         }
 
@@ -129,8 +128,7 @@ class Interpreter {
      */
     public function getCurrentInterpretation()
     {
-        if (!$this->viaCurrent)
-        {
+        if (!$this->viaCurrent) {
             return null;
         }
 
@@ -147,8 +145,7 @@ class Interpreter {
 
         $restriction = $this->_getRestriction($data, $this->relSecondaryKey, false);
 
-        if ($restriction)
-        {
+        if ($restriction) {
             $condition = ArrayHelper::merge($condition, $restriction);
         }
 
@@ -165,19 +162,28 @@ class Interpreter {
      */
     public function setInterpretations($data)
     {
-        if ($data && ArrayHelper::getValue($data, $this->viaModel->formName(), false))
-        {
+        if ($data && ArrayHelper::getValue($data, $this->viaModel->formName(), false)) {
             $data = $this->pushSecondaryKeys($data, $this->viaModel->formName());
 
             $this->_relationsToSave = $this->pushMissingInterpretations($this->getInterpretations($data), $data);
 
-            if ($this->_relationsToSave)
-            {
+            if ($this->_relationsToSave) {
                 $this->viaModel->loadMultiple($this->_relationsToSave, $data, $this->viaModel->formName());
             }
         }
 
         return $this;
+    }
+
+    /**
+     * Retrieves specific interpretation.
+     * @return \yii\db\ActiveRecord|null
+     */
+    public function getInterpretation($id)
+    {
+        $all = $this->getAllInterpretations();
+
+        return ArrayHelper::getValue($all, $id);
     }
 
     /**
@@ -188,8 +194,7 @@ class Interpreter {
     {
         $hash = $this->_getInterpreterHash();
 
-        if (!$this->allowCache || empty($this->_allInterpretations[$hash]))
-        {
+        if (!$this->allowCache || empty($this->_allInterpretations[$hash])) {
             $this->_allInterpretations[$hash] = $this->pushMissingInterpretations($this->getInterpretations());
         }
 
@@ -229,14 +234,12 @@ class Interpreter {
         /* @var $model \yii\db\ActiveRecord */
         $valid = true;
 
-        foreach ($this->_relationsToSave as $model)
-        {
+        foreach ($this->_relationsToSave as $model) {
             $model->{$this->relPrimaryKey} = ($this->owner->primaryKey) ? $this->owner->primaryKey : null;
 
             $attributes = array_diff($model->activeAttributes(), [$this->relPrimaryKey]);
 
-            if (!$model->validate($attributes))
-            {
+            if (!$model->validate($attributes)) {
                 $this->owner->addErrors($model->getErrors());
 
                 $valid = false;
@@ -254,12 +257,10 @@ class Interpreter {
     {
         $saved = true;
 
-        foreach ($this->_relationsToSave as $model)
-        {
+        foreach ($this->_relationsToSave as $model) {
             $model->{$this->relPrimaryKey} = $this->owner->primaryKey;
 
-            if (!$model->save())
-            {
+            if (!$model->save()) {
                 $this->owner->addErrors($model->getErrors());
 
                 $saved = false;
@@ -276,10 +277,8 @@ class Interpreter {
      */
     protected function pushSecondaryKeys($data, $form)
     {
-        if (isset($data[$form]) && is_array($data[$form]))
-        {
-            foreach ($data[$form] as $secondaryKey => $values)
-            {
+        if (isset($data[$form]) && is_array($data[$form])) {
+            foreach ($data[$form] as $secondaryKey => $values) {
                 $data[$form][$secondaryKey][$this->relSecondaryKey] = $secondaryKey;
             }
         }
@@ -302,20 +301,16 @@ class Interpreter {
 
         $viaRestriction = ArrayHelper::remove($restriction, $this->relSecondaryKey, false);
 
-        if (false !== $viaRestriction)
-        {
+        if (false !== $viaRestriction) {
             $restriction[$this->_getPrimaryKeyName($secondaryModel)] = $viaRestriction;
         }
 
-        if ($restriction)
-        {
+        if ($restriction) {
             $queryModel->where($restriction);
         }
 
-        foreach ($queryModel->all() as $secondary)
-        {
-            if (!isset($availables[$secondary->primaryKey]))
-            {
+        foreach ($queryModel->all() as $secondary) {
+            if (!isset($availables[$secondary->primaryKey])) {
                 $availables[$secondary->primaryKey] = $this->_createInterpretation($secondary->primaryKey);
             }
         }
@@ -333,13 +328,11 @@ class Interpreter {
     {
         $restriction = [];
 
-        if ($data)
-        {
+        if ($data) {
             $restriction[$secodaryKey] = $this->_getSecondaryKeys($data, $this->viaModel->formName());
         }
 
-        if ($allowGlobal && $this->restriction)
-        {
+        if ($allowGlobal && $this->restriction) {
             $restriction = ArrayHelper::merge($restriction, $this->restriction);
         }
 
@@ -352,8 +345,7 @@ class Interpreter {
      */
     private function _getSecondaryKeys($data, $key = null)
     {
-        if ($key)
-        {
+        if ($key) {
             $data = ArrayHelper::getValue($data, $key, []);
         }
 
@@ -367,8 +359,7 @@ class Interpreter {
     {
         $primaryKey = $model->primaryKey();
 
-        if (!$composite && count($primaryKey) > 1)
-        {
+        if (!$composite && count($primaryKey) > 1) {
             throw new Exception('Model has composit key which is not allowed. Relations cannot be established');
         }
 
@@ -401,15 +392,13 @@ class Interpreter {
      */
     private function _loadInterpreterConfig($config)
     {
-        if (count($config) < 3)
-        {
+        if (count($config) < 3) {
             throw new \yii\base\Exception(\Yii::t('ib', 'Invalid config for interpreter. Missing required keys.'));
         }
 
         $this->viaModel = new $config[self::INDEX_VIA_CLASS];
 
-        if (isset($config[self::INDEX_VIA_CURRENT]))
-        {
+        if (isset($config[self::INDEX_VIA_CURRENT])) {
             $this->viaCurrent = $config[self::INDEX_VIA_CURRENT];
         }
 
@@ -421,4 +410,5 @@ class Interpreter {
 
         $this->relSecondaryKey = array_pop($this->relSecondary->link);
     }
+
 }
