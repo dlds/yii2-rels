@@ -22,7 +22,8 @@ use dlds\rels\components\Interpreter;
  *
  * @author Jiri Svoboda <jiri.svoboda@dlds.cz>
  */
-class Behavior extends \yii\base\Behavior {
+class Behavior extends \yii\base\Behavior
+{
 
     /**
      * @var \dlds\rels\components\Interpreter current interpreter
@@ -45,18 +46,12 @@ class Behavior extends \yii\base\Behavior {
     public $allowCache = true;
 
     /**
-     * @var boolean indicates interpretation validity
-     */
-    private $valid = null;
-
-    /**
      * Returns the value of an object property.
      * @param stirng $name the property name
      */
     public function __get($name)
     {
-        if (!in_array($name, $this->attrs))
-        {
+        if (!in_array($name, $this->attrs)) {
             return parent::__get($name);
         }
 
@@ -70,8 +65,7 @@ class Behavior extends \yii\base\Behavior {
      */
     public function canGetProperty($name, $checkVars = true)
     {
-        if (!in_array($name, $this->attrs))
-        {
+        if (!in_array($name, $this->attrs)) {
             return parent::canGetProperty($name, $checkVars);
         }
 
@@ -85,35 +79,29 @@ class Behavior extends \yii\base\Behavior {
     {
         return [
             \yii\db\ActiveRecord::EVENT_BEFORE_VALIDATE => 'handleValidate',
-            \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'handleBeforeSave',
-            \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'handleBeforeSave',
             \yii\db\ActiveRecord::EVENT_AFTER_INSERT => 'handleAfterSave',
             \yii\db\ActiveRecord::EVENT_AFTER_UPDATE => 'handleAfterSave',
         ];
     }
 
     /**
-     * Validates request data
-     * @return boolean TRUE on success, otherwise FALSE
+     * Loads mutations
+     * @param type $data
+     * @param type $formName
+     * @return type
      */
-    public function validate()
+    public function loadMutations($data, $formName = null)
     {
-        $this->handleValidate();
-
-        return $this->valid;
+        return $this->setInterpretations($data);
     }
 
     /**
-     * Invokes indepent save
+     * Validates request data
+     * @return boolean TRUE on success, otherwise FALSE
      */
-    public function save($runValidation = true)
+    public function validateMutations()
     {
-        if (!$runValidation || $this->validate())
-        {
-            return $this->interpreter()->save();
-        }
-
-        return false;
+        return $this->interpreter()->validate();
     }
 
     /**
@@ -122,21 +110,7 @@ class Behavior extends \yii\base\Behavior {
      */
     public function handleValidate()
     {
-        $this->valid = $this->setInterpretations(\Yii::$app->request->post())->validate();
-    }
-
-    /**
-     * Handles saving of interpretation
-     * @param type $event
-     */
-    public function handleBeforeSave($event)
-    {
-        if (null === $this->valid)
-        {
-            $this->handleValidate();
-        }
-
-        $event->isValid = $this->valid;
+        $this->validateMutations();
     }
 
     /**
@@ -208,8 +182,7 @@ class Behavior extends \yii\base\Behavior {
      */
     public function interpreter(array $restriction = [])
     {
-        if (null === $this->_interpreter)
-        {
+        if (null === $this->_interpreter) {
             $this->_interpreter = new Interpreter($this->owner, $this->config, $this->allowCache);
         }
 
