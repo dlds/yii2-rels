@@ -39,6 +39,11 @@ class Behavior extends \yii\base\Behavior
      * @var array attr to be auto-interpreted
      */
     public $attrs;
+    
+    /**
+     * @var string
+     */
+    public $attrActive;
 
     /**
      * @var boolean indicates if cache is allowed
@@ -183,7 +188,7 @@ class Behavior extends \yii\base\Behavior
     public function interpreter(array $restriction = [])
     {
         if (null === $this->_interpreter) {
-            $this->_interpreter = new Interpreter($this->owner, $this->config, $this->allowCache);
+            $this->_interpreter = new Interpreter($this->owner, $this->config, $this->allowCache, $this->attrActive);
         }
 
         $this->_interpreter->setRestriction($restriction);

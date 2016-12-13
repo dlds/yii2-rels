@@ -73,6 +73,11 @@ class Interpreter
     protected $allowCache = true;
 
     /**
+     * @var string attr active
+     */
+    protected $attrActive = false;
+
+    /**
      * @var array holds actual all interpretations
      */
     private $_allInterpretations = [];
@@ -88,11 +93,12 @@ class Interpreter
      * @param array $config given configs
      * @param array $scopes given scopes
      */
-    public function __construct($owner, $config, $allowCache = true)
+    public function __construct($owner, $config, $allowCache = true, $attrActive = false)
     {
         // TODO: implement scopes, partial, activationTriggers
         $this->owner = $owner;
         $this->allowCache = $allowCache;
+        $this->attrActive = $attrActive;
 
         $this->_loadInterpreterConfig($config);
     }
@@ -169,6 +175,8 @@ class Interpreter
 
             if ($this->_relationsToSave) {
                 $this->viaModel->loadMultiple($this->_relationsToSave, $data, $this->viaModel->formName());
+
+                $this->_removeDisabledRelations();
             }
         }
 
@@ -409,6 +417,30 @@ class Interpreter
         $this->relPrimaryKey = array_pop($this->relPrimary->link);
 
         $this->relSecondaryKey = array_pop($this->relSecondary->link);
+    }
+
+    /**
+     * Removed disabled relations when are not valid
+     * @return boolean
+     */
+    private function _removeDisabledRelations()
+    {
+        if (!$this->attrActive) {
+            return false;
+        }
+
+        foreach ($this->_relationsToSave as $key => $rel) {
+
+            if (!isset($rel->{$this->attrActive})) {
+                continue;
+            }
+
+            if (!$rel->validate() && !$rel->{$this->attrActive}) {
+                ArrayHelper::remove($this->_relationsToSave, $key);
+            }
+        }
+
+        return true;
     }
 
 }
